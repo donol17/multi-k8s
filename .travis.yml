@@ -1,0 +1,24 @@
+sudo: required
+services:
+  - docker
+before_install:
+  # placeholder for open SLL file config
+  - curl https://sdk.cloud.google.com | bash > /dev/null;
+  - source $HOME/google-cloud-sdk/path.bash.inc
+  - gcloud components update kubectl
+  - gcloud auth activate-service-account --key-file service-account.json
+  - gcloud config set project #add project ID from GCLOUD
+  - gcloud config set compute/zone #enter zone, viewable in Kubernetes cluster
+  - gcloud container clusters get-credentials #add cluster name here
+  #logging into docker CLI, comes via TRAVIS settings
+  - echo "$DOCKER_PASSWORD" | docker login - u "$DOCKER_USERNAME" --password-stdin
+  - docker build -t donol17/react-test -f ./client/Dockerfile.dev ./client
+
+script:
+  - docker run donol17/react-test npm test -- --coverage
+
+deploy:
+    provider: script
+    script: bash ./deploy.sh
+    on:
+      branch: master
